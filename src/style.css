@@ -1,0 +1,264 @@
+/* Global styles for AI Chat Application */
+
+:root {
+  /* Light mode colors */
+  --bg-color: #f9fafb;
+  --text-color: #1f2937;
+  --text-h: #08060d;
+  --border-color: #e5e7eb;
+
+  --sidebar-bg: #ffffff;
+  --input-bg: #ffffff;
+  --input-section-bg: #ffffff;
+
+  --user-bubble-bg: #3b82f6;
+  --user-bubble-text: #ffffff;
+
+  --assistant-bubble-bg: #f3f4f6;
+  --assistant-bubble-text: #1f2937;
+
+  --code-bg: #f3f4f6;
+  --pre-bg: #1f2937;
+  --pre-text: #e5e7eb;
+
+  --link-color: #3b82f6;
+  --blockquote-border: #3b82f6;
+  --blockquote-text: #6b7280;
+
+  --focus-color: #3b82f6;
+  --hover-border-color: #9ca3af;
+
+  --model-selector-bg: #ffffff;
+  --model-info-bg: #f9fafb;
+
+  --input-disabled-bg: #f3f4f6;
+
+  --subtitle-color: #6b7280;
+  --info-label-color: #6b7280;
+  --info-value-color: #1f2937;
+
+  --copy-button-text: #374151;
+
+  --streaming-dot-color: #9ca3af;
+
+  --action-text: #dc2626;
+  --action-bg: #fef2f2;
+  --action-border: #fecaca;
+  --action-hover-bg: #fee2e2;
+  --action-hover-border: #fca5a5;
+
+  --error-bg: #fef2f2;
+  --error-border: #fecaca;
+  --error-text: #dc2626;
+
+  --retry-text: #3b82f6;
+  --retry-bg: #eff6ff;
+  --retry-border: #bfdbfe;
+  --retry-hover-bg: #dbeafe;
+  --retry-hover-border: #93c5fd;
+
+  --refresh-text: #3b82f6;
+  --refresh-bg: #eff6ff;
+  --refresh-border: #bfdbfe;
+  --refresh-hover-bg: #dbeafe;
+  --refresh-hover-border: #93c5fd;
+
+  --send-text: #ffffff;
+  --send-bg: #3b82f6;
+  --send-hover-bg: #2563eb;
+
+  --th-bg: #f9fafb;
+
+  /* Font settings */
+  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
+  --mono: 'Courier New', Courier, monospace;
+
+  font: 16px/1.5 var(--sans);
+  color-scheme: light;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-color: #16171d;
+    --text-color: #9ca3af;
+    --text-h: #f3f4f6;
+    --border-color: #2e303a;
+
+    --sidebar-bg: #1f2028;
+    --input-bg: #1f2028;
+    --input-section-bg: #1f2028;
+
+    --user-bubble-bg: #3b82f6;
+    --user-bubble-text: #ffffff;
+
+    --assistant-bubble-bg: #2e303a;
+    --assistant-bubble-text: #e5e7eb;
+
+    --code-bg: #2e303a;
+    --pre-bg: #0f0f12;
+    --pre-text: #e5e7eb;
+
+    --link-color: #60a5fa;
+    --blockquote-border: #60a5fa;
+    --blockquote-text: #9ca3af;
+
+    --focus-color: #60a5fa;
+    --hover-border-color: #6b7280;
+
+    --model-selector-bg: #1f2028;
+    --model-info-bg: #2e303a;
+
+    --input-disabled-bg: #2e303a;
+
+    --subtitle-color: #9ca3af;
+    --info-label-color: #9ca3af;
+    --info-value-color: #e5e7eb;
+
+    --copy-button-text: #d1d5db;
+
+    --streaming-dot-color: #9ca3af;
+
+    --action-text: #f87171;
+    --action-bg: #1f1515;
+    --action-border: #7f1d1d;
+    --action-hover-bg: #291818;
+    --action-hover-border: #991b1b;
+
+    --error-bg: #1f1515;
+    --error-border: #7f1d1d;
+    --error-text: #f87171;
+
+    --retry-text: #60a5fa;
+    --retry-bg: #172554;
+    --retry-border: #1e3a8a;
+    --retry-hover-bg: #1e3a8a;
+    --retry-hover-border: #2563eb;
+
+    --refresh-text: #60a5fa;
+    --refresh-bg: #172554;
+    --refresh-border: #1e3a8a;
+    --refresh-hover-bg: #1e3a8a;
+    --refresh-hover-border: #2563eb;
+
+    --send-text: #ffffff;
+    --send-bg: #3b82f6;
+    --send-hover-bg: #2563eb;
+
+    --th-bg: #1f2028;
+  }
+}
+
+/* Reset and base styles */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--hover-border-color);
+}
+
+/* Focus visible styles for accessibility */
+:focus-visible {
+  outline: 2px solid var(--focus-color);
+  outline-offset: 2px;
+}
+
+/* Button reset */
+button {
+  font-family: inherit;
+  font-size: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+/* Input reset */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* App container */
+#app {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+/* Code block styling with highlight.js theme integration */
+pre code.hljs {
+  display: block;
+  padding: 1em;
+  overflow-x: auto;
+}
+
+code.hljs {
+  padding: 0.2emudi 0.4em;
+}
+
+/* Custom selection color */
+::selection {
+  background-color: rgba(59, 130, 246, 0.2);
+  color: inherit;
+}
+
+/* Smooth scrolling */
+@media (prefers-reduced-motion: no-preference) {
+  * {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Print styles */
+@media print {
+  body {
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  .sidebar,
+  .input-section {
+    display: none;
+  }
+
+  .chat-main {
+    overflow: visible;
+  }
+}
