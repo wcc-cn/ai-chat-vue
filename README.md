@@ -2,7 +2,7 @@
 
 基于 Ollama 的现代化 AI 聊天应用，采用清新简洁的设计风格，支持流式响应和多种自定义选项。
 
-![Screenshot](/image.png)
+![Screenshot](image.png)
 
 ## 功能特性
 
