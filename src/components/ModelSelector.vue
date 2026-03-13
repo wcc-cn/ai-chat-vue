@@ -1,51 +1,67 @@
 <template>
-  <div class="model-selector">
-    <label for="model-select" class="model-label">Select AI Model</label>
-    <select
-      id="model-select"
-      :value="selectedModel"
-      @change="handleModelChange"
+  <el-card shadow="never" class="model-selector-card">
+    <template #header>
+      <div class="card-header">
+        <el-icon><Cpu /></el-icon>
+        <span>Select AI Model</span>
+      </div>
+    </template>
+
+    <el-select
+      v-model="localSelectedModel"
+      placeholder="Choose a model"
       :disabled="isLoading || models.length === 0"
+      :loading="isLoading"
+      @change="handleModelChange"
       class="model-select"
+      size="large"
     >
-      <option v-if="isLoading" value="" disabled>
-        Loading models...
-      </option>
-      <option v-else-if="models.length === 0" value="" disabled>
-        No models available
-      </option>
-      <option
+      <template #prefix>
+        <el-icon><Box /></el-icon>
+      </template>
+      <el-option
         v-for="model in models"
         :key="model.name"
+        :label="model.name"
         :value="model.name"
       >
-        {{ model.name }}
-      </option>
-    </select>
+        <div class="model-option">
+          <span class="model-name">{{ model.name }}</span>
+          <span class="model-size">{{ formatSize(model.size) }}</span>
+        </div>
+      </el-option>
+    </el-select>
 
-    <div v-if="currentModel" class="model-info">
-      <div class="model-info-item">
-        <span class="info-label">Size:</span>
-        <span class="info-value">{{ formatSize(currentModel.size) }}</span>
-      </div>
-      <div class="model-info-item">
-        <span class="info-label">Updated:</span>
-        <span class="info-value">{{ formatDate(currentModel.modified_at) }}</span>
-      </div>
-    </div>
+    <el-descriptions
+      v-if="currentModel"
+      :column="1"
+      border
+      size="small"
+      class="model-info"
+    >
+      <el-descriptions-item label="Size">
+        {{ formatSize(currentModel.size) }}
+      </el-descriptions-item>
+      <el-descriptions-item label="Updated">
+        {{ formatDate(currentModel.modified_at) }}
+      </el-descriptions-item>
+    </el-descriptions>
 
-    <button
+    <el-button
       v-if="!isLoading && models.length === 0"
+      type="primary"
+      :icon="Refresh"
       @click="$emit('refresh')"
-      class="refresh-button"
+      class="refresh-btn"
     >
       Refresh Models
-    </button>
-  </div>
+    </el-button>
+  </el-card>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, watch } from 'vue'
+import { Cpu, Box, Refresh } from '@element-plus/icons-vue'
 import type { OllamaModel } from '../types/ollama'
 
 interface Props {
@@ -61,13 +77,18 @@ const emit = defineEmits<{
   'refresh': []
 }>()
 
+const localSelectedModel = ref(props.selectedModel)
+
+watch(() => props.selectedModel, (newVal) => {
+  localSelectedModel.value = newVal
+})
+
 const currentModel = computed(() => {
   return props.models.find(m => m.name === props.selectedModel) || null
 })
 
-function handleModelChange(event: Event): void {
-  const target = event.target as HTMLSelectElement
-  emit('select', target.value)
+function handleModelChange(value: string): void {
+  emit('select', value)
 }
 
 function formatSize(bytes: number): string {
@@ -103,90 +124,49 @@ function formatDate(dateString: string): string {
 </script>
 
 <style scoped>
-.model-selector {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1rem;
-  background-color: var(--model-selector-bg, #ffffff);
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
+.model-selector-card {
+  background-color: var(--card-bg);
 }
 
-.model-label {
-  font-size: 0.875rem;
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 600;
-  color: var(--text-color, #1f2937);
+  color: var(--text-color);
 }
 
 .model-select {
-  padding: 0.625rem;
-  font-size: 0.875rem;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 6px;
-  background-color: var(--input-bg, #ffffff);
-  color: var(--text-color, #1f2937);
-  cursor: pointer;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  width: 100%;
 }
 
-.model-select:hover:not(:disabled) {
-  border-color: var(--hover-border-color, #9ca3af);
+.model-option {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
-.model-select:focus {
-  outline: none;
-  border-color: var(--focus-color, #3b82f6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+.model-name {
+  font-weight: 500;
 }
 
-.model-select:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
+.model-size {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
 }
 
 .model-info {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  background-color: var(--model-info-bg, #f9fafb);
-  border-radius: 6px;
-  font-size: 0.75rem;
+  margin-top: 12px;
 }
 
-.model-info-item {
-  display: flex;
-  justify-content: space-between;
-}
-
-.info-label {
-  color: var(--info-label-color, #6b7280);
-}
-
-.info-value {
-  color: var(--info-value-color, #1f2937);
+.model-info :deep(.el-descriptions__label) {
+  width: 80px;
   font-weight: 500;
 }
 
-.refresh-button {
-  padding: 0.625rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--refresh-text, #3b82f6);
-  background-color: var(--refresh-bg, #eff6ff);
-  border: 1px solid var(--refresh-border, #bfdbfe);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.refresh-button:hover {
-  background-color: var(--refresh-hover-bg, #dbeafe);
-  border-color: var(--refresh-hover-border, #93c5fd);
-}
-
-.refresh-button:active {
-  transform: translateY(1px);
+.refresh-btn {
+  width: 100%;
+  margin-top: 12px;
 }
 </style>

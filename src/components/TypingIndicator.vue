@@ -9,7 +9,6 @@
 </template>
 
 <script setup lang="ts">
-// No props needed for typing indicator
 </script>
 
 <style scoped>
@@ -17,19 +16,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 1rem;
+  padding: 8px;
 }
 
 .dots {
   display: flex;
-  gap: 4px;
+  gap: 6px;
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background-color: var(--dot-color, #9ca3af);
+  background-color: var(--primary-color);
+  opacity: 0.6;
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
@@ -48,9 +48,11 @@
 @keyframes bounce {
   0%, 80%, 100% {
     transform: scale(0);
+    opacity: 0.4;
   }
   40% {
     transform: scale(1);
+    opacity: 1;
   }
 }
 </style>

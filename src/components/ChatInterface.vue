@@ -1,12 +1,17 @@
 <template>
-  <div class="chat-interface">
-    <aside class="sidebar">
+  <el-container class="chat-interface">
+    <el-aside width="300px" class="sidebar">
       <div class="sidebar-header">
-        <h1 class="app-title">AI Chat</h1>
-        <p class="app-subtitle">Powered by Ollama</p>
+        <div class="logo-wrapper">
+          <el-icon :size="32" color="#409eff"><ChatDotRound /></el-icon>
+          <div class="title-group">
+            <h1 class="app-title">AI Chat</h1>
+            <p class="app-subtitle">Powered by Ollama</p>
+          </div>
+        </div>
       </div>
 
-      <div class="model-section">
+      <div class="sidebar-content">
         <ModelSelector
           :models="chatStore.availableModels"
           :selected-model="chatStore.selectedModel"
@@ -14,85 +19,100 @@
           @select="chatStore.setModel"
           @refresh="refreshModels"
         />
-      </div>
 
-      <div class="actions-section">
-        <button
+        <el-button
+          type="danger"
+          plain
+          :icon="Delete"
           @click="handleClearChat"
-          class="action-button"
           :disabled="!chatStore.hasMessages"
+          class="clear-btn"
         >
           Clear Chat
-        </button>
+        </el-button>
       </div>
 
-      <div v-if="chatStore.error" class="error-section">
-        <div class="error-message">
-          {{ chatStore.error }}
-        </div>
-        <button
-          @click="handleRetry"
-          class="retry-button"
-        >
-          Retry
-        </button>
-      </div>
-    </aside>
+      <el-alert
+        v-if="chatStore.error"
+        :title="chatStore.error"
+        type="error"
+        show-icon
+        :closable="false"
+        class="error-alert"
+      >
+        <template #default>
+          <el-button type="primary" text size="small" @click="handleRetry">
+            Retry
+          </el-button>
+        </template>
+      </el-alert>
+    </el-aside>
 
-    <main class="chat-main">
+    <el-main class="chat-main">
       <div class="messages-container" ref="messagesContainer">
-        <div v-if="!chatStore.hasMessages" class="empty-state">
-          <div class="empty-state-icon">💬</div>
-          <h2 class="empty-state-title">Start a conversation</h2>
-          <p class="empty-state-text">
-            {{ chatStore.isReady ? 'Type a message below to begin chatting.' : 'Select a model to start.' }}
-          </p>
-        </div>
+        <el-empty
+          v-if="!chatStore.hasMessages"
+          :image-size="120"
+          description="Start a conversation"
+        >
+          <template #image>
+            <el-icon :size="80" color="#c0c4cc"><ChatLineRound /></el-icon>
+          </template>
+          <template #description>
+            <p class="empty-description">
+              {{ chatStore.isReady ? 'Type a message below to begin chatting.' : 'Select a model to start.' }}
+            </p>
+          </template>
+        </el-empty>
 
-        <MessageBubble
-          v-for="message in chatStore.messages"
-          :key="message.id"
-          :message="message"
-        />
+        <div class="messages-list">
+          <MessageBubble
+            v-for="message in chatStore.messages"
+            :key="message.id"
+            :message="message"
+          />
 
-        <div v-if="chatStore.isTyping" class="typing-wrapper">
-          <div class="typing-message">
-            <TypingIndicator />
+          <div v-if="chatStore.isTyping" class="typing-wrapper">
+            <el-card shadow="never" class="typing-card">
+              <TypingIndicator />
+            </el-card>
           </div>
         </div>
       </div>
 
       <div class="input-section">
-        <form @submit.prevent="handleSubmit" class="message-form">
-          <div class="input-wrapper">
-            <textarea
+        <el-card shadow="never" class="input-card">
+          <el-form @submit.prevent="handleSubmit" class="message-form">
+            <el-input
               v-model="userInput"
+              type="textarea"
+              :autosize="{ minRows: 1, maxRows: 6 }"
               placeholder="Type your message..."
               :disabled="!chatStore.isReady || chatStore.isTyping"
-              class="message-input"
-              rows="1"
               @keydown="handleKeyDown"
-              ref="textareaRef"
+              class="message-input"
             />
-          </div>
-          <button
-            type="submit"
-            class="send-button"
-            :disabled="!canSend"
-            :title="canSend ? 'Send message' : 'Enter a message'"
-          >
-            <span v-if="!chatStore.isTyping">Send</span>
-            <span v-else>Sending...</span>
-          </button>
-        </form>
+            <el-button
+              type="primary"
+              :icon="chatStore.isTyping ? Loading : Promotion"
+              :loading="chatStore.isTyping"
+              :disabled="!canSend"
+              @click="handleSubmit"
+              class="send-btn"
+            >
+              {{ chatStore.isTyping ? 'Sending' : 'Send' }}
+            </el-button>
+          </el-form>
+        </el-card>
       </div>
-    </main>
-  </div>
+    </el-main>
+  </el-container>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, nextTick, watch } from 'vue'
 import { useChatStore } from '../stores/chat'
+import { ChatDotRound, ChatLineRound, Delete, Promotion, Loading } from '@element-plus/icons-vue'
 import ModelSelector from './ModelSelector.vue'
 import MessageBubble from './MessageBubble.vue'
 import TypingIndicator from './TypingIndicator.vue'
@@ -101,7 +121,6 @@ const chatStore = useChatStore()
 
 const userInput = ref('')
 const messagesContainer = ref<HTMLElement | null>(null)
-const textareaRef = ref<HTMLTextAreaElement | null>(null)
 
 const canSend = computed(() => {
   return userInput.value.trim().length > 0 && chatStore.isReady && !chatStore.isTyping
@@ -136,7 +155,6 @@ function handleSubmit(): void {
   if (message) {
     chatStore.sendMessage(message)
     userInput.value = ''
-    autoResizeTextarea()
   }
 }
 
@@ -158,20 +176,6 @@ function handleRetry(): void {
   }
 }
 
-function autoResizeTextarea(): void {
-  if (!textareaRef.value) return
-
-  textareaRef.value.style.height = 'auto'
-  const scrollHeight = textareaRef.value.scrollHeight
-  textareaRef.value.style.height = `${Math.min(scrollHeight, 200)}px`
-}
-
-watch(userInput, () => {
-  nextTick(() => {
-    autoResizeTextarea()
-  })
-})
-
 watch(() => chatStore.messages.length, () => {
   nextTick(() => {
     scrollToBottom()
@@ -187,152 +191,93 @@ function scrollToBottom(): void {
 
 <style scoped>
 .chat-interface {
-  display: flex;
   height: 100vh;
-  background-color: var(--bg-color, #f9fafb);
-  color: var(--text-color, #1f2937);
+  background-color: var(--bg-page);
 }
 
 .sidebar {
-  width: 320px;
-  background-color: var(--sidebar-bg, #ffffff);
-  border-right: 1px solid var(--border-color, #e5e7eb);
+  background-color: var(--sidebar-bg);
+  border-right: 1px solid var(--border-light);
   display: flex;
   flex-direction: column;
-  padding: 1.5rem;
-  gap: 1.5rem;
+  padding: 20px;
+  gap: 20px;
   overflow-y: auto;
 }
 
 .sidebar-header {
-  margin-bottom: 0.5rem;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.logo-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.title-group {
+  display: flex;
+  flex-direction: column;
 }
 
 .app-title {
-  font-size: 1.5rem;
-  font-weight: 700;
-  margin: 0 0 0.25rem;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--text-color);
 }
 
 .app-subtitle {
-  font-size: 0.875rem;
-  color: var(--subtitle-color, #6b7280);
+  font-size: 0.75rem;
+  color: var(--text-secondary);
   margin: 0;
 }
 
-.model-section {
-  flex-shrink: 0;
-}
-
-.actions-section {
+.sidebar-content {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  flex-shrink: 0;
+  gap: 16px;
+  flex: 1;
 }
 
-.action-button {
-  padding: 0.75rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--action-text, #dc2626);
-  background-color: var(--action-bg, #fef2f2);
-  border: 1px solid var(--action-border, #fecaca);
-  border-radius: 6px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
+.clear-btn {
+  width: 100%;
 }
 
-.action-button:hover:not(:disabled) {
-  background-color: var(--action-hover-bg, #fee2e2);
-  border-color: var(--action-hover-border, #fca5a5);
-}
-
-.action-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.error-section {
-  padding: 1rem;
-  background-color: var(--error-bg, #fef2f2);
-  border: 1px solid var(--error-border, #fecaca);
-  border-radius: 6px;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.error-message {
-  font-size: 0.875rem;
-  color: var(--error-text, #dc2626);
-}
-
-.retry-button {
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: var(--retry-text, #3b82f6);
-  background-color: var(--retry-bg, #eff6ff);
-  border: 1px solid var(--retry-border, #bfdbfe);
-  border-radius: 4px;
-  cursor: pointer;
-  align-self: flex-start;
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.retry-button:hover {
-  background-color: var(--retry-hover-bg, #dbeafe);
-  border-color: var(--retry-hover-border, #93c5fd);
+.error-alert {
+  margin-top: auto;
 }
 
 .chat-main {
-  flex: 1;
   display: flex;
   flex-direction: column;
+  padding: 0;
   overflow: hidden;
+  background-color: var(--bg-color);
 }
 
 .messages-container {
   flex: 1;
   overflow-y: auto;
-  padding: 1.5rem;
+  padding: 24px;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
 }
 
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  text-align: center;
-  padding: 2rem;
-}
-
-.empty-state-icon {
-  font-size: 4rem;
-  margin-bottom: 1rem;
-}
-
-.empty-state-title {
-  font-size: 1.25rem;
-  font-weight: 600;
-  margin: 0 0 0.5rem;
-  color: var(--text-color, #1f2937);
-}
-
-.empty-state-text {
+.empty-description {
+  color: var(--text-secondary);
   font-size: 0.875rem;
-  color: var(--subtitle-color, #6b7280);
-  margin: 0;
-  max-width: 400px;
+  margin-top: 8px;
+}
+
+.messages-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .typing-wrapper {
@@ -340,86 +285,43 @@ function scrollToBottom(): void {
   justify-content: flex-start;
 }
 
-.typing-message {
-  padding: 1rem;
-  background-color: var(--assistant-bubble-bg, #f3f4f6);
-  border-radius: 12px;
-  margin: 0.5rem 0;
+.typing-card {
+  max-width: 80px;
+  background-color: var(--assistant-bubble-bg);
 }
 
 .input-section {
-  padding: 1.5rem;
-  background-color: var(--input-section-bg, #ffffff);
-  border-top: 1px solid var(--border-color, #e5e7eb);
+  padding: 16px 24px 24px;
+  background-color: var(--bg-color);
+}
+
+.input-card {
+  max-width: 900px;
+  margin: 0 auto;
+  background-color: var(--card-bg);
 }
 
 .message-form {
   display: flex;
-  gap: 0.75rem;
+  gap: 12px;
   align-items: flex-end;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.input-wrapper {
-  flex: 1;
 }
 
 .message-input {
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 0.875rem;
-  border: 1px solid var(--border-color, #e5e7eb);
-  border-radius: 8px;
-  background-color: var(--input-bg, #ffffff);
-  color: var(--text-color, #1f2937);
+  flex: 1;
+}
+
+.message-input :deep(.el-textarea__inner) {
+  padding: 12px 16px;
+  font-size: 0.9375rem;
+  line-height: 1.5;
   resize: none;
-  min-height: 44px;
-  max-height: 200px;
-  font-family: inherit;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.message-input:hover:not(:disabled) {
-  border-color: var(--hover-border-color, #9ca3af);
-}
-
-.message-input:focus {
-  outline: none;
-  border-color: var(--focus-color, #3b82f6);
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.message-input:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
-  background-color: var(--input-disabled-bg, #f3f4f6);
-}
-
-.send-button {
-  padding: 0.75rem 1.5rem;
-  font-size: 0.875rem;
+.send-btn {
+  height: 40px;
+  padding: 0 24px;
   font-weight: 500;
-  color: var(--send-text, #ffffff);
-  background-color: var(--send-bg, #3b82f6);
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease, transform 0.1s ease;
-  white-space: nowrap;
-}
-
-.send-button:hover:not(:disabled) {
-  background-color: var(--send-hover-bg, #2563eb);
-}
-
-.send-button:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.send-button:disabled {
-  cursor: not-allowed;
-  opacity: 0.6;
 }
 
 @media (max-width: 768px) {
@@ -428,23 +330,23 @@ function scrollToBottom(): void {
   }
 
   .sidebar {
-    width: 100%;
+    width: 100% !important;
     border-right: none;
-    border-bottom: 1px solid var(--border-color, #e5e7eb);
-    padding: 1rem;
-    gap: 1rem;
+    border-bottom: 1px solid var(--border-light);
+    padding: 16px;
+    gap: 16px;
   }
 
   .messages-container {
-    padding: 1rem;
+    padding: 16px;
   }
 
   .input-section {
-    padding: 1rem;
+    padding: 12px 16px 16px;
   }
 
-  .message-form {
-    max-width: 100%;
+  .messages-list {
+    gap: 12px;
   }
 }
 </style>

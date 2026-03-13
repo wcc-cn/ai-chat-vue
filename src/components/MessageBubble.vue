@@ -1,30 +1,52 @@
 <template>
   <div :class="['message-bubble', message.role]">
-    <div class="message-header">
-      <span class="role-badge">{{ roleLabel }}</span>
-      <span class="timestamp">{{ formattedTimestamp }}</span>
+    <div class="message-avatar">
+      <el-avatar
+        v-if="message.role === 'user'"
+        :size="36"
+        :icon="UserFilled"
+        class="avatar-user"
+      />
+      <el-avatar
+        v-else
+        :size="36"
+        class="avatar-assistant"
+      >
+        <el-icon><Monitor /></el-icon>
+      </el-avatar>
     </div>
-    <div class="message-content">
-      <MarkdownRenderer v-if="message.role === 'assistant'" :content="message.content" />
-      <span v-else class="user-content">{{ message.content }}</span>
+    <div class="message-body">
+      <div class="message-header">
+        <span class="role-label">{{ roleLabel }}</span>
+        <span class="timestamp">{{ formattedTimestamp }}</span>
+      </div>
+      <el-card shadow="never" class="message-content-card">
+        <div class="message-content">
+          <MarkdownRenderer v-if="message.role === 'assistant'" :content="message.content" />
+          <span v-else class="user-content">{{ message.content }}</span>
+        </div>
+        <div v-if="message.isStreaming" class="streaming-indicator">
+          <TypingIndicator />
+        </div>
+        <div class="message-actions" v-if="canCopy && !message.isStreaming">
+          <el-button
+            text
+            :icon="copied ? Check : DocumentCopy"
+            size="small"
+            @click="copyContent"
+            class="copy-btn"
+          >
+            {{ copied ? 'Copied' : 'Copy' }}
+          </el-button>
+        </div>
+      </el-card>
     </div>
-    <div v-if="message.isStreaming" class="streaming-indicator">
-      <TypingIndicator />
-    </div>
-    <button
-      v-if="canCopy"
-      class="copy-button"
-      @click="copyContent"
-      title="Copy to clipboard"
-    >
-      <span v-if="!copied">Copy</span>
-      <span v-else>Copied!</span>
-    </button>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
+import { UserFilled, Monitor, DocumentCopy, Check } from '@element-plus/icons-vue'
 import MarkdownRenderer from './MarkdownRenderer.vue'
 import TypingIndicator from './TypingIndicator.vue'
 import type { ChatMessage } from '../types/ollama'
@@ -39,7 +61,7 @@ const copied = ref(false)
 let copyTimeout: number | null = null
 
 const roleLabel = computed(() => {
-  return props.message.role === 'user' ? 'You' : 'AI'
+  return props.message.role === 'user' ? 'You' : 'AI Assistant'
 })
 
 const formattedTimestamp = computed(() => {
@@ -69,49 +91,84 @@ function copyContent(): void {
 <style scoped>
 .message-bubble {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1rem;
-  border-radius: 12px;
-  margin: 0.5rem 0;
-  max-width: 100%;
-  position: relative;
+  gap: 12px;
+  max-width: 85%;
 }
 
 .message-bubble.user {
-  background-color: var(--user-bubble-bg, #3b82f6);
-  color: var(--user-bubble-text, #ffffff);
   align-self: flex-end;
+  flex-direction: row-reverse;
 }
 
 .message-bubble.assistant {
-  background-color: var(--assistant-bubble-bg, #f3f4f6);
-  color: var(--assistant-bubble-text, #1f2937);
   align-self: flex-start;
+}
+
+.message-avatar {
+  flex-shrink: 0;
+}
+
+.avatar-user {
+  background: var(--user-bubble-bg);
+}
+
+.avatar-assistant {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+}
+
+.message-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1;
 }
 
 .message-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  font-size: 0.75rem;
-  opacity: 0.8;
+  gap: 8px;
+  padding: 0 4px;
 }
 
-.role-badge {
+.message-bubble.user .message-header {
+  flex-direction: row-reverse;
+}
+
+.role-label {
+  font-size: 0.8125rem;
   font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+  color: var(--text-secondary);
 }
 
 .timestamp {
-  font-size: 0.7rem;
+  font-size: 0.75rem;
+  color: var(--text-placeholder);
+}
+
+.message-content-card {
+  border-radius: var(--radius-md);
+  transition: box-shadow 0.2s ease;
+}
+
+.message-bubble.user .message-content-card {
+  background: var(--user-bubble-bg);
+  color: var(--user-bubble-text);
+}
+
+.message-bubble.assistant .message-content-card {
+  background: var(--assistant-bubble-bg);
+  color: var(--assistant-bubble-text);
+}
+
+.message-content-card :deep(.el-card__body) {
+  padding: 14px 18px;
 }
 
 .message-content {
-  flex: 1;
   word-wrap: break-word;
   overflow-wrap: break-word;
+  line-height: 1.6;
 }
 
 .user-content {
@@ -121,55 +178,36 @@ function copyContent(): void {
 .streaming-indicator {
   display: flex;
   justify-content: center;
-  padding: 0.5rem 0;
+  padding-top: 8px;
 }
 
-:deep(.typing-indicator) {
-  padding: 0.5rem;
-}
-
-:deep(.dot) {
-  background-color: var(--streaming-dot-color, #9ca3af);
-}
-
-.user :deep(.dot) {
-  background-color: rgba(255, 255, 255, 0.7);
-}
-
-.copy-button {
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  font-size: 0.75rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  color: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 4px;
-  cursor: pointer;
+.message-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 8px;
+  margin-top: 8px;
+  border-top: 1px solid var(--border-light);
   opacity: 0;
   transition: opacity 0.2s ease;
 }
 
-.message-bubble:hover .copy-button {
+.message-content-card:hover .message-actions {
   opacity: 1;
 }
 
-.copy-button:hover {
-  background-color: rgba(255, 255, 255, 0.3);
+.message-bubble.user .message-actions {
+  border-top-color: rgba(255, 255, 255, 0.2);
 }
 
-.copy-button:active {
-  transform: scale(0.95);
+.copy-btn {
+  font-size: 0.75rem;
 }
 
-.assistant .copy-button {
-  background-color: rgba(0, 0, 0, 0.1);
-  color: var(--copy-button-text, #374151);
-  border-color: rgba(0, 0, 0, 0.2);
+.message-bubble.user .copy-btn {
+  color: rgba(255, 255, 255, 0.8);
 }
 
-.assistant .copy-button:hover {
-  background-color: rgba(0, 0, 0, 0.15);
+.message-bubble.user .copy-btn:hover {
+  color: #ffffff;
 }
 </style>
