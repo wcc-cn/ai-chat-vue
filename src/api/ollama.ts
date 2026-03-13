@@ -68,16 +68,35 @@ class OllamaClient {
    * Returns an async generator that yields chunks of content
    */
   async *generateChatStream(options: OllamaChatOptions): AsyncGenerator<string, void, unknown> {
+    const baseURL = this.client.defaults.baseURL || ''
+    const url = `${baseURL}/chat`
+
     try {
-      const response = await this.client.post('/chat', {
-        ...options,
-        stream: true
-      }, {
-        responseType: 'blob'
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ...options,
+          stream: true
+        })
       })
 
-      const blob = response.data as Blob
-      const reader = blob.stream().getReader()
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new OllamaAPIError(
+          errorData.error || `HTTP error ${response.status}`,
+          response.status,
+          errorData
+        )
+      }
+
+      if (!response.body) {
+        throw new OllamaAPIError('Response body is null')
+      }
+
+      const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
 
@@ -92,17 +111,13 @@ class OllamaClient {
           const text = decoder.decode(value, { stream: true })
           buffer += text
 
-          // Parse JSON objects from the buffer
-          // Ollama sends multiple JSON objects concatenated: {}{}{}
           while (buffer.length > 0) {
-            // Find the first complete JSON object
             let braceCount = 0
             let jsonEnd = -1
 
             for (let i = 0; i < buffer.length; i++) {
               if (buffer[i] === '{') {
                 if (braceCount === 0 && i > 0 && buffer[i - 1].trim() !== '') {
-                  // Handle case where there might be whitespace between objects
                   break
                 }
                 braceCount++
@@ -132,13 +147,15 @@ class OllamaClient {
                 console.log('Invalid JSON:', jsonStr)
               }
             } else {
-              // No complete JSON object found, wait for more data
               break
             }
           }
         }
       }
     } catch (error) {
+      if (error instanceof OllamaAPIError) {
+        throw error
+      }
       throw this.handleError(error, 'Failed to generate streaming chat completion')
     }
   }
@@ -159,13 +176,32 @@ class OllamaClient {
    * Pull a model (optional feature)
    */
   async *pullModel(modelName: string): AsyncGenerator<any, void, unknown> {
+    const baseURL = this.client.defaults.baseURL || ''
+    const url = `${baseURL}/pull`
+
     try {
-      const response = await this.client.post('/pull', { name: modelName }, {
-        responseType: 'blob'
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ name: modelName })
       })
 
-      const blob = response.data as Blob
-      const reader = blob.stream().getReader()
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new OllamaAPIError(
+          errorData.error || `HTTP error ${response.status}`,
+          response.status,
+          errorData
+        )
+      }
+
+      if (!response.body) {
+        throw new OllamaAPIError('Response body is null')
+      }
+
+      const reader = response.body.getReader()
       const decoder = new TextDecoder()
       let buffer = ''
 
@@ -180,7 +216,6 @@ class OllamaClient {
           const text = decoder.decode(value, { stream: true })
           buffer += text
 
-          // Parse JSON objects from buffer (same logic as generateChatStream)
           while (buffer.length > 0) {
             let braceCount = 0
             let jsonEnd = -1
@@ -221,6 +256,9 @@ class OllamaClient {
         }
       }
     } catch (error) {
+      if (error instanceof OllamaAPIError) {
+        throw error
+      }
       throw this.handleError(error, `Failed to pull model ${modelName}`)
     }
   }
