@@ -82,12 +82,12 @@
 
       <div class="input-section">
         <el-card shadow="never" class="input-card">
-          <el-form @submit.prevent="handleSubmit" class="message-form">
+          <div class="input-wrapper">
             <el-input
               v-model="userInput"
               type="textarea"
-              :autosize="{ minRows: 1, maxRows: 6 }"
-              placeholder="Type your message..."
+              :autosize="{ minRows: 3, maxRows: 8 }"
+              placeholder="Type your message... (Enter to send, Shift+Enter for new line)"
               :disabled="!chatStore.isReady || chatStore.isTyping"
               @keydown="handleKeyDown"
               class="message-input"
@@ -99,10 +99,9 @@
               :disabled="!canSend"
               @click="handleSubmit"
               class="send-btn"
-            >
-              {{ chatStore.isTyping ? 'Sending' : 'Send' }}
-            </el-button>
-          </el-form>
+              circle
+            />
+          </div>
         </el-card>
       </div>
     </el-main>
@@ -275,7 +274,7 @@ function scrollToBottom(): void {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   width: 100%;
 }
@@ -296,14 +295,14 @@ function scrollToBottom(): void {
 }
 
 .input-card {
-  max-width: 900px;
+  max-width: 1200px;
   margin: 0 auto;
   background-color: var(--card-bg);
 }
 
-.message-form {
+.input-wrapper {
+  position: relative;
   display: flex;
-  gap: 12px;
   align-items: flex-end;
 }
 
@@ -312,16 +311,18 @@ function scrollToBottom(): void {
 }
 
 .message-input :deep(.el-textarea__inner) {
-  padding: 12px 16px;
+  padding: 12px 60px 12px 16px;
   font-size: 0.9375rem;
   line-height: 1.5;
   resize: none;
 }
 
 .send-btn {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 40px;
   height: 40px;
-  padding: 0 24px;
-  font-weight: 500;
 }
 
 @media (max-width: 768px) {

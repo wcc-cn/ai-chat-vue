@@ -92,7 +92,7 @@ function copyContent(): void {
 .message-bubble {
   display: flex;
   gap: 12px;
-  max-width: 85%;
+  max-width: 95%;
 }
 
 .message-bubble.user {
