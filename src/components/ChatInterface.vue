@@ -20,6 +20,8 @@
           @refresh="refreshModels"
         />
 
+        <FontSizeSelector />
+
         <el-button
           type="danger"
           plain
@@ -115,6 +117,7 @@ import { ChatDotRound, ChatLineRound, Delete, Promotion, Loading } from '@elemen
 import ModelSelector from './ModelSelector.vue'
 import MessageBubble from './MessageBubble.vue'
 import TypingIndicator from './TypingIndicator.vue'
+import FontSizeSelector from './FontSizeSelector.vue'
 
 const chatStore = useChatStore()
 

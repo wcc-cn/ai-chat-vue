@@ -42,7 +42,9 @@
   --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --mono: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
 
-  font: 16px/1.6 var(--sans);
+  font-size: 16px;
+  line-height: 1.6;
+  font-family: var(--sans);
   color-scheme: light;
   color: var(--text-color);
   background-color: var(--bg-page);
